@@ -1,0 +1,178 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh_CN">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>基于prometheus和T265实现室内无人机定点飞行 &#8212; Prometheus_P300 1 文档</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="prometheust265">
+<h1>基于prometheus和T265实现室内无人机定点飞行<a class="headerlink" href="#prometheust265" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>1，消息流<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>消息流如下图所示</p>
+<img alt="../_images/20201127005642921.png" src="../_images/20201127005642921.png" />
+</div>
+<div class="section" id="id2">
+<h2>2，软件和硬件环境<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>硬件</p>
+<p>P200无人机</p>
+<p>TX2</p>
+<p>Holybro pixhawk4</p>
+<p>T265</p>
+<p>软件</p>
+<p>1.10.0版本PX4固件</p>
+<p>ubuntu16.04</p>
+<p>nomachine（下载：<a class="reference external" href="https://www.nomachine.com/">https://www.nomachine.com/</a>，使用方法：<a class="reference external" href="https://www.ncnynl.com/archives/202007/3809.html">nomachine使用方法</a>）</p>
+</div>
+<div class="section" id="id3">
+<h2>3，飞控参数修改<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>EKF2_AID_MASK 设置 视觉位置合成 和 视觉偏航合成</p>
+<p>EKF2_HGT_MODE 设置为 Vision 使用视觉作为高度估计的主要来源。</p>
+<img alt="../_images/20201126224905726.png" src="../_images/20201126224905726.png" />
+<img alt="../_images/20201126224809796.png" src="../_images/20201126224809796.png" />
+</div>
+<div class="section" id="id4">
+<h2>4，软件环境搭建<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<div class="section" id="t265librealsenseros">
+<h3>4.1 安装T265驱动librealsense和ROS包<a class="headerlink" href="#t265librealsenseros" title="永久链接至标题">¶</a></h3>
+</div>
+<div class="section" id="prometheus">
+<h3>4.2 安装prometheus<a class="headerlink" href="#prometheus" title="永久链接至标题">¶</a></h3>
+<p>参考
+<a class="reference external" href="https://github.com/amov-lab/Prometheus/wiki/%E5%AE%89%E8%A3%85%E5%8F%8A%E7%BC%96%E8%AF%91">promethues安装与编译</a></p>
+</div>
+</div>
+<div class="section" id="id5">
+<h2>5，硬件连接<a class="headerlink" href="#id5" title="永久链接至标题">¶</a></h2>
+<p>准备下面这一条线</p>
+<img alt="../_images/2020112711014747.png" src="../_images/2020112711014747.png" />
+<p>TX2一端这么插</p>
+<img alt="../_images/20201127110050829.png" src="../_images/20201127110050829.png" />
+<p>数据线的另一端接飞控telem2口，波特率为921600</p>
+</div>
+<div class="section" id="id6">
+<h2>6，软件修改<a class="headerlink" href="#id6" title="永久链接至标题">¶</a></h2>
+<p>修改rs_t265.launch里的设备号</p>
+<p>rs_t265.launch位于/home/nvidia/realsense_ws/src/realsense-ros/realsense2_camera/launch/文件夹下</p>
+<p>如果运行roslaunch realsense2_camera rs_t265.launch出现以下报错</p>
+<img alt="../_images/20201203142716743.png" src="../_images/20201203142716743.png" />
+<p>双击打开rs_t265.launch文件，将下图红框内数字删除并保存此文件即可，数字两边的引号等等的不需要删除，仅需删除红框内数字。</p>
+<img alt="../_images/20201213194531547.png" src="../_images/20201213194531547.png" />
+</div>
+<div class="section" id="id7">
+<h2>7，命令运行<a class="headerlink" href="#id7" title="永久链接至标题">¶</a></h2>
+<p>使用nomachine远程登录TX2</p>
+<p>打开一个新终端，运行以下命令 roslaunch prometheus_experiment
+prometheus_px4_realsense.launch</p>
+</div>
+<div class="section" id="id8">
+<h2>8，飞行前的检查<a class="headerlink" href="#id8" title="永久链接至标题">¶</a></h2>
+<p>rostopic echo /tf 消息打印正常代表T265节点起来运行正常 r</p>
+<p>ostopic echo /mavros/vision_pose/pose 消息打印正常代表px4_pose_estimate节点起来运行正常</p>
+<p>rostopic echo /mavros/state 为true代表MAVROS和飞控连接正常</p>
+<p>打开地面站（此时建议用USB线连接电脑与飞控）看到LOCAL_POSITION_NED消息频率为30Hz，而且移动无人机看xyz数据的变化是否符合北东地坐标系，默认一开始机头方向为正东方向，具体表现为：向上移动无人机，Z的数据是往负方向变大，往左移动无人机是X的数据往正方向变大，往前方向也就是机头方向移动无人机，y往正方向变大。</p>
+<img alt="../_images/20201127000451770.png" src="../_images/20201127000451770.png" />
+</div>
+<div class="section" id="id9">
+<h2>9，实际飞行<a class="headerlink" href="#id9" title="永久链接至标题">¶</a></h2>
+<p>以上检查确认正确之后 遥控器定点模式下解锁起飞即可。 演示视频如下。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">內容目录</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">基于prometheus和T265实现室内无人机定点飞行</a><ul>
+<li><a class="reference internal" href="#id1">1，消息流</a></li>
+<li><a class="reference internal" href="#id2">2，软件和硬件环境</a></li>
+<li><a class="reference internal" href="#id3">3，飞控参数修改</a></li>
+<li><a class="reference internal" href="#id4">4，软件环境搭建</a><ul>
+<li><a class="reference internal" href="#t265librealsenseros">4.1 安装T265驱动librealsense和ROS包</a></li>
+<li><a class="reference internal" href="#prometheus">4.2 安装prometheus</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id5">5，硬件连接</a></li>
+<li><a class="reference internal" href="#id6">6，软件修改</a></li>
+<li><a class="reference internal" href="#id7">7，命令运行</a></li>
+<li><a class="reference internal" href="#id8">8，飞行前的检查</a></li>
+<li><a class="reference internal" href="#id9">9，实际飞行</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs/基于prometheus和t265实现室内无人机定点飞行.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="转向" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, maxi.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/docs/基于prometheus和t265实现室内无人机定点飞行.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
